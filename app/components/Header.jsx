@@ -7,12 +7,12 @@ export default function Header() {
       <nav className="navigation">
         <ul className="nav-list">
           <li className="nav-item">
-            <Link href="/pages/Home">
+            <Link href="/Home">
               <h3>Home</h3>
             </Link>
           </li>
           <li className="nav-item">
-            <Link href="/pages/userTable">
+            <Link href="/userTable">
               <h3>User Table</h3>
             </Link>
           </li>

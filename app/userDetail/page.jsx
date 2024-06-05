@@ -1,5 +1,5 @@
-import Header from "../../components/Header";
-import UserDetail from "../../components/UserDetail";
+import Header from "../components/Header";
+import UserDetail from "../components/UserDetail";
 
 export default function UserDetailPage() {
   return (

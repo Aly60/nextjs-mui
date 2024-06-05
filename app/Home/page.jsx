@@ -1,4 +1,4 @@
-/*import Header from "../components/Header";
+import Header from "../components/Header";
 import UserTable from "../components/UserTable";
 
 export default function Home() {
@@ -9,4 +9,3 @@ export default function Home() {
     </div>
   );
 }
-*/
