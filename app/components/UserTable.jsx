@@ -149,6 +149,12 @@ export default function UserTable() {
             onChange={handleDateChange}
             value={endDate || ""}
             disabled={!startDate}
+            error={endDate && moment(endDate).isBefore(startDate)}
+            helperText={
+              endDate && moment(endDate).isBefore(startDate)
+                ? "End date cannot be before start date"
+                : ""
+            }
           />
           <Button
             variant="contained"
