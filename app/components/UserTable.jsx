@@ -47,7 +47,7 @@ const columns = [
     headerName: "Actions",
     width: 150,
     renderCell: (params) => (
-      <Link href={`/user/${params.row.id}`}>
+      <Link href={`/${params.row.id}`}>
         <button className="MuiButtonBase-root">View Details</button>
       </Link>
     ),
