@@ -12,8 +12,8 @@ export default function Header() {
             </Link>
           </li>
           <li className="nav-item">
-            <Link href="/userTable">
-              <h3>User Table</h3>
+            <Link href="/add-user">
+              <h3>Form</h3>
             </Link>
           </li>
         </ul>
