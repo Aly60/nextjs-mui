@@ -7,13 +7,13 @@ export default function Header() {
       <nav className="navigation">
         <ul className="nav-list">
           <li className="nav-item">
-            <Link href="/Home">
+            <Link href="/">
               <h3>Home</h3>
             </Link>
           </li>
           <li className="nav-item">
             <Link href="/add-user">
-              <h3>Form</h3>
+              <h3>Add User</h3>
             </Link>
           </li>
         </ul>

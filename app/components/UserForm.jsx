@@ -24,81 +24,85 @@ export default function UserForm({ userId }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-  // fetch user data
+
+  // Fetch user data if userId is provided
   useEffect(() => {
-    if (userId) {
-      setLoading(true);
-      axios
-        .get(`http://localhost:3001/users/${userId}`)
-        .then((response) => {
+    const fetchUserData = async () => {
+      if (userId) {
+        try {
+          setLoading(true);
+          const response = await axios.get(
+            `http://localhost:3001/users/${userId}`
+          );
           const userData = response.data;
-          // format the date
           setUser({
             ...userData,
             date: moment(userData.date).format("YYYY-MM-DD"),
           });
-          setLoading(false);
-        })
-        .catch((error) => {
+          setError(null);
+        } catch (error) {
           console.error(error);
           setError("Failed to fetch user data.");
+        } finally {
           setLoading(false);
-        });
-    }
+        }
+      }
+    };
+    fetchUserData();
   }, [userId]);
-  // handle input change
+
+  // Handle input change
   const handleChange = (event) => {
     setUser({ ...user, [event.target.name]: event.target.value });
   };
-  // handle file upload
+
+  // Handle file upload
   const handleFileChange = (event) => {
     const file = event.target.files[0];
-    // convert file to base64
     const reader = new FileReader();
 
     reader.onloadend = () => {
       setUser((prevUser) => ({ ...prevUser, picture: reader.result }));
     };
-
+    //read the filr as data url
     if (file) {
       reader.readAsDataURL(file);
     }
   };
-  // handle submit
-  const handleSubmit = (event) => {
+
+  // Handle form submission
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
-    // handle user creation or update
     const url = userId
       ? `http://localhost:3001/users/${userId}`
       : "http://localhost:3001/users";
     const method = userId ? "put" : "post";
-    // send the user data to the server
-    axios[method](url, user)
-      .then(() => {
-        setLoading(false);
-        setSuccess(true);
-        setError(null);
-        if (!userId) {
-          setUser({
-            name: "",
-            phone: "",
-            address: "",
-            status: "",
-            date: "",
-            picture: "",
-          });
-        }
-        setTimeout(() => {
-          setSuccess(false);
-        }, 2500);
-      })
-      .catch((error) => {
-        setLoading(false);
-        setSuccess(false);
-        setError(userId ? "Failed to update user" : "Failed to create user");
-        console.log(error);
-      });
+    //send the data of the user to the server
+    try {
+      await axios[method](url, user);
+      setSuccess(true);
+      setError(null);
+      if (!userId) {
+        setUser({
+          name: "",
+          phone: "",
+          address: "",
+          status: "",
+          date: "",
+          picture: "",
+        });
+      }
+      //show success message after 2.5seconds
+      setTimeout(() => setSuccess(false), 2500);
+    } catch (error) {
+      console.error(error);
+      //
+      setError(userId ? "Failed to update user" : "Failed to create user");
+      setSuccess(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -175,9 +179,11 @@ export default function UserForm({ userId }) {
           required
           fullWidth
         />
+        {/* Upload picture */}
         <Button variant="contained" component="label" sx={{ mt: 2, mb: 2 }}>
           Upload Picture
           <input type="file" hidden onChange={handleFileChange} />
+          {/* Display picture */}
         </Button>
         {user.picture && (
           <Avatar
@@ -196,7 +202,7 @@ export default function UserForm({ userId }) {
           {loading ? <CircularProgress size={24} /> : "Submit"}
         </Button>
         {success && (
-          <Typography variant="body1" color="success" sx={{ mt: 2 }}>
+          <Typography variant="body1" color="success.main" sx={{ mt: 2 }}>
             {userId ? "User updated successfully" : "User created successfully"}
           </Typography>
         )}

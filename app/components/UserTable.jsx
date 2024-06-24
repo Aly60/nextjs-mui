@@ -16,15 +16,16 @@ import moment from "moment";
 import "../globals.css";
 
 const columns = [
-  { field: "id", headerName: "ID", width: 120 },
-  { field: "name", headerName: "Name", width: 150 },
-  { field: "phone", headerName: "Phone", width: 150 },
-  { field: "address", headerName: "Address", width: 150 },
-  { field: "status", headerName: "Status", width: 150 },
+  { field: "id", headerName: "ID", width: 120, editable: true },
+  { field: "name", headerName: "Name", width: 150, editable: true },
+  { field: "phone", headerName: "Phone", width: 150, editable: true },
+  { field: "address", headerName: "Address", width: 150, editable: true },
+  { field: "status", headerName: "Status", width: 150, editable: true },
   {
     field: "date",
     headerName: "Date",
     width: 150,
+    editable: true,
     renderCell: (params) => {
       const date = moment(params.value, "YYYY-MM-DD");
       return date.isValid() ? date.format("YYYY-MM-DD") : "Invalid Date";
