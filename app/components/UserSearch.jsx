@@ -3,26 +3,30 @@ import { Autocomplete, TextField } from "@mui/material";
 
 export default function UserSearch({ users, onFilter }) {
   const handleSearchChange = (event, value) => {
+    let filteredUsers = [];
     if (value) {
-      const filteredUsers = users
+      filteredUsers = users
         .filter((user) =>
           user.name.toLowerCase().startsWith(value.toLowerCase())
         )
         .sort((a, b) => a.name.localeCompare(b.name));
-      onFilter(filteredUsers);
     } else {
-      const sortedUsers = users.sort((a, b) => a.name.localeCompare(b.name));
-      onFilter(sortedUsers);
+      filteredUsers = users
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name));
     }
+    onFilter(filteredUsers);
   };
+
+  const options = users
+    .map((user) => user.name)
+    .sort((a, b) => a.localeCompare(b));
 
   return (
     <div className="autocomplete-container">
       <Autocomplete
         freeSolo
-        options={users
-          .map((user) => user.name)
-          .sort((a, b) => a.localeCompare(b))}
+        options={options}
         renderInput={(params) => (
           <TextField {...params} label="Search User" variant="outlined" />
         )}

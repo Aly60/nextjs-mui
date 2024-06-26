@@ -9,14 +9,13 @@ import {
   CircularProgress,
   Typography,
 } from "@mui/material";
-import Link from "next/link";
 import axios from "axios";
 import UserSearch from "./UserSearch";
 import moment from "moment";
 import "../globals.css";
 
 const columns = [
-  { field: "id", headerName: "ID", width: 120, editable: true },
+  { field: "id", headerName: "ID", width: 120, editable: false },
   { field: "name", headerName: "Name", width: 150, editable: true },
   { field: "phone", headerName: "Phone", width: 150, editable: true },
   { field: "address", headerName: "Address", width: 150, editable: true },
@@ -27,7 +26,7 @@ const columns = [
     width: 150,
     editable: true,
     renderCell: (params) => {
-      const date = moment(params.value, "YYYY-MM-DD");
+      const date = moment(params.value, "YYYY-MM-DD", true);
       return date.isValid() ? date.format("YYYY-MM-DD") : "Invalid Date";
     },
   },
@@ -35,6 +34,7 @@ const columns = [
     field: "picture",
     headerName: "Picture",
     width: 100,
+    editable: true,
     renderCell: (params) => (
       <Avatar
         src={params.row.picture}
@@ -48,9 +48,35 @@ const columns = [
     headerName: "Actions",
     width: 150,
     renderCell: (params) => (
-      <Link href={`/${params.row.id}`}>
-        <button className="MuiButtonBase-root">View Details</button>
-      </Link>
+      <>
+        {editingId === params.row.id ? (
+          <>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => handleSave(params.row)}
+              style={{ marginRight: 5 }}
+            >
+              Save
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => handleCancel()}
+            >
+              Cancel
+            </Button>
+          </>
+        ) : (
+          <Button
+            variant="contained"
+            size="small"
+            onClick={() => handleEdit(params.row.id)}
+          >
+            Edit
+          </Button>
+        )}
+      </>
     ),
   },
 ];
@@ -62,35 +88,44 @@ export default function UserTable() {
   const [endDate, setEndDate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [originalData, setOriginalData] = useState(null);
 
   useEffect(() => {
     axios
       .get("http://localhost:3001/users")
       .then((response) => {
-        //format the dates and invalid
-        const data = response.data.map((user) => ({
+        let data = response.data.map((user) => ({
           ...user,
-          date: moment(user.date, "YYYY-MM-DD").isValid()
+          date: moment(user.date).isValid()
             ? moment(user.date).format("YYYY-MM-DD")
             : "Invalid Date",
         }));
+
+        // Retrieve local storage edits
+        const localEdits =
+          JSON.parse(localStorage.getItem("editedUsers")) || {};
+        data = data.map((user) =>
+          localEdits[user.id] ? { ...user, ...localEdits[user.id] } : user
+        );
+
         setUsers(data);
         setFilteredUsers(data);
         setLoading(false);
       })
       .catch((error) => {
-        console.error(error);
+        console.error("Error fetching data:", error);
         setError("Failed to fetch data.");
         setLoading(false);
       });
   }, []);
-  //update filterd users on search input
+
   const handleFilter = (filteredUsers) => {
     setFilteredUsers(filteredUsers);
   };
-  // handle the update for the start date and end date
+
   const handleDateChange = (event) => {
-    const date = moment(event.target.value);
+    const date = moment(event.target.value, "YYYY-MM-DD", true);
     if (event.target.name === "startDate") {
       setStartDate(date.isValid() ? date.format("YYYY-MM-DD") : "");
       if (!date.isValid() || (endDate && date.isAfter(endDate))) {
@@ -102,24 +137,24 @@ export default function UserTable() {
       setEndDate(date.isValid() ? date.format("YYYY-MM-DD") : "");
     }
   };
-  //filter users based on the date range
+
   const filterByDate = (users) => {
     if (!startDate && !endDate) return users;
     return users.filter((user) => {
-      const userDate = moment(user.date, "YYYY-MM-DD");
+      const userDate = moment(user.date, "YYYY-MM-DD", true);
       return (
         (!startDate || userDate.isSameOrAfter(startDate)) &&
         (!endDate || userDate.isSameOrBefore(endDate))
       );
     });
   };
-  // clear the filters and reset the users
+
   const handleClearDates = () => {
     setStartDate(null);
     setEndDate(null);
     setFilteredUsers(users);
   };
-  //update  filtered users when the date range or users change
+
   useEffect(() => {
     if (!startDate && !endDate) {
       setFilteredUsers(users);
@@ -127,6 +162,64 @@ export default function UserTable() {
       setFilteredUsers(filterByDate(users));
     }
   }, [startDate, endDate, users]);
+
+  const handleEdit = (id) => {
+    setEditingId(id);
+    setOriginalData(users.find((user) => user.id === id));
+  };
+
+  const handleCancel = () => {
+    if (originalData) {
+      setUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user.id === originalData.id ? originalData : user
+        )
+      );
+      setFilteredUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user.id === originalData.id ? originalData : user
+        )
+      );
+      setOriginalData(null);
+    }
+    setEditingId(null);
+  };
+
+  const handleSave = async (user) => {
+    try {
+      const response = await axios.put(
+        `http://localhost:3001/users/${user.id}`,
+        user
+      );
+      console.log("Successfully updated user on the server", response);
+
+      // Store the edited data in local storage
+      const localEdits = JSON.parse(localStorage.getItem("editedUsers")) || {};
+      localEdits[user.id] = user;
+      localStorage.setItem("editedUsers", JSON.stringify(localEdits));
+
+      // Update the state to reflect the edited data
+      setUsers((prevUsers) =>
+        prevUsers.map((u) => (u.id === user.id ? user : u))
+      );
+      setFilteredUsers((prevUsers) =>
+        prevUsers.map((u) => (u.id === user.id ? user : u))
+      );
+      setEditingId(null);
+      setOriginalData(null);
+    } catch (error) {
+      console.error("Failed to update the user", error);
+      setError("Failed to update the user.");
+    }
+  };
+
+  const handleInputChange = (id, field, value) => {
+    setUsers((prevUsers) =>
+      prevUsers.map((user) =>
+        user.id === id ? { ...user, [field]: value } : user
+      )
+    );
+  };
 
   return (
     <div className="container">
@@ -179,10 +272,47 @@ export default function UserTable() {
         <Box className="data-grid-container" sx={{ marginTop: 2 }}>
           <DataGrid
             rows={filteredUsers}
-            columns={columns}
+            columns={columns.map((col) =>
+              col.field === "actions"
+                ? {
+                    ...col,
+                    renderCell: (params) => (
+                      <>
+                        {editingId === params.row.id ? (
+                          <>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              onClick={() => handleSave(params.row)}
+                              style={{ marginRight: 5 }}
+                            >
+                              Save
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              onClick={() => handleCancel()}
+                            >
+                              Cancel
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            variant="contained"
+                            size="small"
+                            onClick={() => handleEdit(params.row.id)}
+                          >
+                            Edit
+                          </Button>
+                        )}
+                      </>
+                    ),
+                  }
+                : col
+            )}
             pageSize={5}
             pagination
-            pageSizeOptions={[5, 10, 20, 30, 40]}
+            pageSizeOptions={[5, 10, 20, 30, 40, 100]}
           />
         </Box>
       )}
